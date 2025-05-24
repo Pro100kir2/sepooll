@@ -4,6 +4,7 @@ export interface Room {
   description: string;
   password?: string;
   publicKey: string;
+  privateKey: string;
   userCount?: number;
   createdAt: Date;
 }

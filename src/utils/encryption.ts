@@ -3,8 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Generate a random public key
 export const generatePublicKey = (): string => {
-  // Generate a 16-character random string
   return uuidv4().substr(0, 16);
+};
+
+// Generate a random private key
+export const generatePrivateKey = (): string => {
+  return uuidv4().substr(0, 32);
 };
 
 // Encrypt a message using the key

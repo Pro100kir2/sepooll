@@ -1,20 +1,22 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { generatePublicKey } from '../utils/encryption';
+import { generatePublicKey, generatePrivateKey } from '../utils/encryption';
 import { Room, Message } from '../types';
 
 interface RoomsContextType {
   rooms: Room[];
   createRoom: (name: string, description: string, password?: string) => Room;
   getRoom: (id: string) => Room | undefined;
+  deleteRoom: (id: string, privateKey: string) => boolean;
   addMessage: (roomId: string, content: string, type: string, file?: File) => void;
   messages: Record<string, Message[]>;
 }
 
 const RoomsContext = createContext<RoomsContextType>({
   rooms: [],
-  createRoom: () => ({ id: '', name: '', description: '', publicKey: '', messages: [], createdAt: new Date() }),
+  createRoom: () => ({ id: '', name: '', description: '', publicKey: '', privateKey: '', messages: [], createdAt: new Date() }),
   getRoom: () => undefined,
+  deleteRoom: () => false,
   addMessage: () => {},
   messages: {},
 });
@@ -43,12 +45,14 @@ export const RoomsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const createRoom = (name: string, description: string, password?: string): Room => {
     const id = uuidv4();
     const publicKey = generatePublicKey();
+    const privateKey = generatePrivateKey();
     const newRoom: Room = {
       id,
       name,
       description,
       password,
       publicKey,
+      privateKey,
       userCount: 1,
       createdAt: new Date(),
     };
@@ -64,6 +68,22 @@ export const RoomsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const getRoom = (id: string): Room | undefined => {
     return rooms.find(room => room.id === id);
+  };
+
+  const deleteRoom = (id: string, privateKey: string): boolean => {
+    const room = getRoom(id);
+    if (!room || room.privateKey !== privateKey) {
+      return false;
+    }
+
+    setRooms(prevRooms => prevRooms.filter(r => r.id !== id));
+    setMessages(prevMessages => {
+      const newMessages = { ...prevMessages };
+      delete newMessages[id];
+      return newMessages;
+    });
+
+    return true;
   };
 
   const addMessage = (roomId: string, content: string, type: string, file?: File) => {
@@ -87,7 +107,7 @@ export const RoomsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <RoomsContext.Provider value={{ rooms, createRoom, getRoom, addMessage, messages }}>
+    <RoomsContext.Provider value={{ rooms, createRoom, getRoom, deleteRoom, addMessage, messages }}>
       {children}
     </RoomsContext.Provider>
   );

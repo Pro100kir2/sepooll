@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Lock, KeyRound, Users, Copy, Check, AlertCircle } from 'lucide-react';
+import { Lock, KeyRound, Users, Copy, Check, AlertCircle, Trash2 } from 'lucide-react';
 import { useRooms } from '../contexts/RoomsContext';
 import { EncryptionStatus } from '../types';
 import MessageList from '../components/MessageList';
 import MessageInput from '../components/MessageInput';
 import KeyInputModal from '../components/KeyInputModal';
 import PasswordModal from '../components/PasswordModal';
+import DeleteRoomModal from '../components/DeleteRoomModal';
 
 const RoomPage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const { getRoom, addMessage, messages } = useRooms();
+  const { getRoom, addMessage, messages, deleteRoom } = useRooms();
 
   const [room, setRoom] = useState(getRoom(roomId || ''));
   const [encryptionStatus, setEncryptionStatus] = useState<EncryptionStatus>({
@@ -20,6 +21,7 @@ const RoomPage: React.FC = () => {
   });
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(!!room?.password);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [passwordVerified, setPasswordVerified] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
@@ -34,7 +36,6 @@ const RoomPage: React.FC = () => {
       }
       setRoom(foundRoom);
 
-      // Restore encryption status from localStorage
       const savedKey = localStorage.getItem(`room_key_${roomId}`);
       if (savedKey) {
         setEncryptionStatus({
@@ -88,9 +89,13 @@ const RoomPage: React.FC = () => {
     if (password === room.password) {
       setPasswordVerified(true);
       setShowPasswordModal(false);
-    } else {
-      // Handle incorrect password
-      // You could show an error message here
+    }
+  };
+
+  const handleDeleteRoom = (privateKey: string) => {
+    const success = deleteRoom(roomId, privateKey);
+    if (success) {
+      navigate('/');
     }
   };
 
@@ -117,17 +122,25 @@ const RoomPage: React.FC = () => {
             <h1 className="text-2xl font-bold text-teal-400 mb-1 flex items-center">
               {room.name}
               {room.password && (
-                <Lock size={16} className="ml-2 text-amber-400" aria-label="Password protected" />
+              <Lock size={16} className="ml-2 text-amber-400" aria-label="Password protected" />
               )}
             </h1>
             <p className="text-slate-300">{room.description}</p>
           </div>
 
-          <div className="flex items-center mt-3 md:mt-0">
+          <div className="flex items-center mt-3 md:mt-0 space-x-2">
             <div className="flex items-center mr-4 text-slate-400">
               <Users size={16} className="mr-1" />
               <span className="text-sm">{room.userCount || 1}/10</span>
             </div>
+
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="btn btn-outline text-error hover:bg-error/10 flex items-center"
+            >
+              <Trash2 size={16} className="mr-1" />
+              Delete Room
+            </button>
 
             {encryptionStatus.isEncrypted ? (
               <button
@@ -192,6 +205,13 @@ const RoomPage: React.FC = () => {
         onClose={() => setShowKeyModal(false)}
         onSubmit={handleSubmitKey}
         publicKey={room.publicKey}
+      />
+
+      <DeleteRoomModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onDelete={handleDeleteRoom}
+        roomName={room.name}
       />
     </div>
   );

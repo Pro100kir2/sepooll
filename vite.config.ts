@@ -2,9 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  base: './', // 🔥 ВАЖНО для Vercel!
+  base: './',          // <-- важно
   plugins: [react()],
   optimizeDeps: {
-    exclude: ['dist'],
+    exclude: ['lucide-react'],
   },
 });

@@ -1,0 +1,121 @@
+import React, { useState } from 'react';
+import { KeyRound, Eye, EyeOff, X } from 'lucide-react';
+
+interface KeyInputModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (key: string) => void;
+  publicKey?: string;
+}
+
+const KeyInputModal: React.FC<KeyInputModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  publicKey,
+}) => {
+  const [key, setKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
+  const [error, setError] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!key.trim()) {
+      setError('Please enter a key');
+      return;
+    }
+
+    if (publicKey && key !== publicKey) {
+      setError('Incorrect key. Please try again.');
+      return;
+    }
+
+    onSubmit(key);
+    setKey('');
+    setError('');
+  };
+
+  const handleUsePublicKey = () => {
+    if (publicKey) {
+      setKey(publicKey);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-slate-900 rounded-lg shadow-xl w-full max-w-md overflow-hidden animate-fade-in">
+        <div className="flex justify-between items-center p-4 border-b border-slate-700">
+          <h2 className="text-xl font-semibold text-slate-100 flex items-center">
+            <KeyRound size={20} className="text-teal-500 mr-2" />
+            Enter Decryption Key
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-300 transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-4">
+          <p className="text-slate-300 mb-4">
+            Enter the public key to decrypt messages in this room.
+          </p>
+
+          <div className="mb-4">
+            <div className="relative">
+              <input
+                type={showKey ? 'text' : 'password'}
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                placeholder="Enter decryption key"
+                className="input pr-10 w-full"
+                autoFocus
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300"
+                onClick={() => setShowKey(!showKey)}
+              >
+                {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {error && <p className="text-error mt-1 text-sm">{error}</p>}
+          </div>
+
+          <div className="flex justify-between items-center">
+            {publicKey && (
+              <button
+                type="button"
+                onClick={handleUsePublicKey}
+                className="text-teal-500 hover:text-teal-400 text-sm"
+              >
+                Use public key
+              </button>
+            )}
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn btn-outline"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+              >
+                Decrypt
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default KeyInputModal;
